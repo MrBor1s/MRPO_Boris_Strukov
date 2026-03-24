@@ -19,12 +19,12 @@ class Repository:
         return connection
 
     def authenticate(self, login: str, password: str) -> User | None:
-        query = '''
+        query = """
             SELECT u.id, u.full_name, u.login, u.password, r.name AS role
             FROM users u
             JOIN roles r ON r.id = u.role_id
             WHERE u.login = ? AND u.password = ?
-        '''
+        """
         with self.connect() as connection:
             row = connection.execute(query, (login.strip(), password.strip())).fetchone()
         if row is None:
@@ -59,7 +59,9 @@ class Repository:
 
     def get_pickup_points(self) -> list[str]:
         with self.connect() as connection:
-            rows = connection.execute('SELECT address FROM pickup_points ORDER BY address').fetchall()
+            rows = connection.execute(
+                'SELECT address FROM pickup_points ORDER BY address'
+            ).fetchall()
         return [row['address'] for row in rows]
 
     def get_products(
@@ -68,7 +70,7 @@ class Repository:
         supplier_name: str = 'Все поставщики',
         sort_order: str = 'Без сортировки',
     ) -> list[Product]:
-        query = '''
+        query = """
             SELECT
                 p.id,
                 p.article,
@@ -90,11 +92,11 @@ class Repository:
             JOIN manufacturers m ON m.id = p.manufacturer_id
             JOIN categories c ON c.id = p.category_id
             WHERE 1 = 1
-        '''
+        """
         params: list[object] = []
         if search_text.strip():
-            pattern = f"%{search_text.strip().lower()}%"
-            query += '''
+            pattern = f'%{search_text.strip().lower()}%'
+            query += """
                 AND (
                     lower(p.article) LIKE ? OR
                     lower(p.name) LIKE ? OR
@@ -104,7 +106,7 @@ class Repository:
                     lower(m.name) LIKE ? OR
                     lower(c.name) LIKE ?
                 )
-            '''
+            """
             params.extend([pattern] * 7)
         if supplier_name != 'Все поставщики':
             query += ' AND s.name = ? '
@@ -123,7 +125,7 @@ class Repository:
     def get_product_by_id(self, product_id: int) -> Product | None:
         with self.connect() as connection:
             row = connection.execute(
-                '''
+                """
                 SELECT
                     p.id,
                     p.article,
@@ -145,7 +147,7 @@ class Repository:
                 JOIN manufacturers m ON m.id = p.manufacturer_id
                 JOIN categories c ON c.id = p.category_id
                 WHERE p.id = ?
-                ''',
+                """,
                 (product_id,),
             ).fetchone()
         if row is None:
@@ -154,17 +156,23 @@ class Repository:
 
     def get_next_product_id(self) -> int:
         with self.connect() as connection:
-            value = connection.execute('SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM products').fetchone()['next_id']
+            value = connection.execute(
+                'SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM products'
+            ).fetchone()['next_id']
         return int(value)
 
     def get_next_order_number(self) -> int:
         with self.connect() as connection:
-            value = connection.execute('SELECT COALESCE(MAX(order_number), 0) + 1 AS next_id FROM orders').fetchone()['next_id']
+            value = connection.execute(
+                'SELECT COALESCE(MAX(order_number), 0) + 1 AS next_id FROM orders'
+            ).fetchone()['next_id']
         return int(value)
 
     def save_product(self, data: dict[str, object], product_id: int | None = None) -> None:
         supplier_id = self._get_or_create_lookup_id('suppliers', str(data['supplier_name']))
-        manufacturer_id = self._get_or_create_lookup_id('manufacturers', str(data['manufacturer_name']))
+        manufacturer_id = self._get_or_create_lookup_id(
+            'manufacturers', str(data['manufacturer_name'])
+        )
         category_id = self._get_or_create_lookup_id('categories', str(data['category_name']))
         payload = (
             str(data['article']).strip(),
@@ -182,17 +190,17 @@ class Repository:
         with self.connect() as connection:
             if product_id is None:
                 connection.execute(
-                    '''
+                    """
                     INSERT INTO products (
                         article, name, unit, price, supplier_id, manufacturer_id,
                         category_id, discount_percent, stock_quantity, description, image_path
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''',
+                    """,
                     payload,
                 )
             else:
                 connection.execute(
-                    '''
+                    """
                     UPDATE products
                     SET article = ?,
                         name = ?,
@@ -206,7 +214,7 @@ class Repository:
                         description = ?,
                         image_path = ?
                     WHERE id = ?
-                    ''',
+                    """,
                     (*payload, product_id),
                 )
 
@@ -223,7 +231,7 @@ class Repository:
             connection.execute('DELETE FROM products WHERE id = ?', (product_id,))
 
     def get_orders(self) -> list[Order]:
-        query = '''
+        query = """
             SELECT
                 o.id,
                 o.order_number,
@@ -240,7 +248,7 @@ class Repository:
             JOIN order_statuses os ON os.id = o.status_id
             JOIN pickup_points pp ON pp.id = o.pickup_point_id
             ORDER BY o.order_number ASC
-        '''
+        """
         with self.connect() as connection:
             rows = connection.execute(query).fetchall()
         return [self._map_order(row) for row in rows]
@@ -248,7 +256,7 @@ class Repository:
     def get_order_by_id(self, order_id: int) -> Order | None:
         with self.connect() as connection:
             row = connection.execute(
-                '''
+                """
                 SELECT
                     o.id,
                     o.order_number,
@@ -265,7 +273,7 @@ class Repository:
                 JOIN order_statuses os ON os.id = o.status_id
                 JOIN pickup_points pp ON pp.id = o.pickup_point_id
                 WHERE o.id = ?
-                ''',
+                """,
                 (order_id,),
             ).fetchone()
         if row is None:
@@ -274,7 +282,9 @@ class Repository:
 
     def save_order(self, data: dict[str, object], order_id: int | None = None) -> None:
         status_id = self._get_lookup_id('order_statuses', str(data['status_name']))
-        pickup_point_id = self._get_lookup_id('pickup_points', str(data['pickup_address']), field='address')
+        pickup_point_id = self._get_lookup_id(
+            'pickup_points', str(data['pickup_address']), field='address'
+        )
         payload = (
             int(data['order_number']),
             str(data['article_summary']).strip(),
@@ -288,19 +298,19 @@ class Repository:
         with self.connect() as connection:
             if order_id is None:
                 cursor = connection.execute(
-                    '''
+                    """
                     INSERT INTO orders (
                         order_number, article_summary, status_id, pickup_point_id,
                         order_date, delivery_date, customer_name, pickup_code
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''',
+                    """,
                     payload,
                 )
                 new_id = cursor.lastrowid
                 self._replace_order_items(connection, new_id, str(data['article_summary']))
             else:
                 connection.execute(
-                    '''
+                    """
                     UPDATE orders
                     SET order_number = ?,
                         article_summary = ?,
@@ -311,7 +321,7 @@ class Repository:
                         customer_name = ?,
                         pickup_code = ?
                     WHERE id = ?
-                    ''',
+                    """,
                     (*payload, order_id),
                 )
                 self._replace_order_items(connection, order_id, str(data['article_summary']))
@@ -320,10 +330,14 @@ class Repository:
         with self.connect() as connection:
             connection.execute('DELETE FROM orders WHERE id = ?', (order_id,))
 
-    def _replace_order_items(self, connection: sqlite3.Connection, order_id: int, article_summary: str) -> None:
+    def _replace_order_items(
+        self, connection: sqlite3.Connection, order_id: int, article_summary: str
+    ) -> None:
         connection.execute('DELETE FROM order_items WHERE order_id = ?', (order_id,))
         for article, quantity in self.parse_article_summary(article_summary):
-            row = connection.execute('SELECT id FROM products WHERE article = ?', (article,)).fetchone()
+            row = connection.execute(
+                'SELECT id FROM products WHERE article = ?', (article,)
+            ).fetchone()
             if row is not None:
                 connection.execute(
                     'INSERT INTO order_items (order_id, product_id, quantity) VALUES (?, ?, ?)',

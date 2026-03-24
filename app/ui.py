@@ -56,7 +56,10 @@ class ShoeStoreApp(tk.Tk):
     def login(self, login: str, password: str) -> None:
         user = self.repository.authenticate(login, password)
         if user is None:
-            messagebox.showerror('Ошибка авторизации', 'Неверный логин или пароль. Проверьте данные и повторите попытку.')
+            messagebox.showerror(
+                'Ошибка авторизации',
+                'Неверный логин или пароль. Проверьте данные и повторите попытку.',
+            )
             return
         self.current_user = user
         self.show_products_screen()
@@ -78,16 +81,22 @@ class ShoeStoreApp(tk.Tk):
 
     def open_product_form(self, product_id: int | None = None) -> None:
         if self.current_user is None or self.current_user.role != 'Администратор':
-            messagebox.showwarning('Доступ запрещён', 'Добавлять и редактировать товары может только администратор.')
+            messagebox.showwarning(
+                'Доступ запрещён', 'Добавлять и редактировать товары может только администратор.'
+            )
             return
         if self.product_form_window is not None and self.product_form_window.winfo_exists():
             self.product_form_window.focus_set()
             return
-        self.product_form_window = ProductForm(self, self.repository, self.image_service, product_id)
+        self.product_form_window = ProductForm(
+            self, self.repository, self.image_service, product_id
+        )
 
     def open_order_form(self, order_id: int | None = None) -> None:
         if self.current_user is None or self.current_user.role != 'Администратор':
-            messagebox.showwarning('Доступ запрещён', 'Добавлять и редактировать заказы может только администратор.')
+            messagebox.showwarning(
+                'Доступ запрещён', 'Добавлять и редактировать заказы может только администратор.'
+            )
             return
         if self.order_form_window is not None and self.order_form_window.winfo_exists():
             self.order_form_window.focus_set()
@@ -109,10 +118,14 @@ class Header(ttk.Frame):
         app._images.append(logo)
         self.logo_label.configure(image=logo)
 
-        ttk.Label(self, text=WINDOW_TITLE, font=('Segoe UI', 18, 'bold')).grid(row=0, column=1, sticky='w')
+        ttk.Label(self, text=WINDOW_TITLE, font=('Segoe UI', 18, 'bold')).grid(
+            row=0, column=1, sticky='w'
+        )
         ttk.Label(self, text=title_text, font=('Segoe UI', 11)).grid(row=1, column=1, sticky='w')
         user_text = app.current_user.full_name if app.current_user else 'Неизвестный пользователь'
-        ttk.Label(self, text=user_text, font=('Segoe UI', 11, 'bold')).grid(row=0, column=2, sticky='e', padx=(8, 12))
+        ttk.Label(self, text=user_text, font=('Segoe UI', 11, 'bold')).grid(
+            row=0, column=2, sticky='e', padx=(8, 12)
+        )
         ttk.Button(self, text='Выход', command=app.logout).grid(row=1, column=2, sticky='e')
 
 
@@ -167,7 +180,13 @@ class ProductListView(ttk.Frame):
 
             ttk.Label(toolbar, text='Поставщик:').pack(side='left')
             suppliers = ['Все поставщики'] + self.app.repository.get_suppliers()
-            supplier_box = ttk.Combobox(toolbar, textvariable=self.supplier_var, values=suppliers, state='readonly', width=24)
+            supplier_box = ttk.Combobox(
+                toolbar,
+                textvariable=self.supplier_var,
+                values=suppliers,
+                state='readonly',
+                width=24,
+            )
             supplier_box.pack(side='left', padx=(6, 12))
             supplier_box.bind('<<ComboboxSelected>>', lambda _event: self.refresh_products())
 
@@ -183,9 +202,13 @@ class ProductListView(ttk.Frame):
             sort_box.bind('<<ComboboxSelected>>', lambda _event: self.refresh_products())
 
         if role in {'Менеджер', 'Администратор'}:
-            ttk.Button(toolbar, text='Заказы', command=self.app.show_orders_screen).pack(side='right', padx=(8, 0))
+            ttk.Button(toolbar, text='Заказы', command=self.app.show_orders_screen).pack(
+                side='right', padx=(8, 0)
+            )
         if role == 'Администратор':
-            ttk.Button(toolbar, text='Добавить товар', command=lambda: self.app.open_product_form()).pack(side='right')
+            ttk.Button(
+                toolbar, text='Добавить товар', command=lambda: self.app.open_product_form()
+            ).pack(side='right')
 
     def _build_canvas(self) -> None:
         self.canvas = tk.Canvas(self, bg='#EDEDED', highlightthickness=0)
@@ -212,7 +235,12 @@ class ProductListView(ttk.Frame):
             supplier_name=self.supplier_var.get(),
             sort_order=self.sort_var.get(),
         )
-        ttk.Label(self.cards_frame, text=f'Найдено товаров: {len(self.products)}', padding=(12, 6), font=('Segoe UI', 10, 'bold')).pack(anchor='w')
+        ttk.Label(
+            self.cards_frame,
+            text=f'Найдено товаров: {len(self.products)}',
+            padding=(12, 6),
+            font=('Segoe UI', 10, 'bold'),
+        ).pack(anchor='w')
         for product in self.products:
             self._add_product_card(product)
 
@@ -231,38 +259,112 @@ class ProductListView(ttk.Frame):
             preview = ImageOps.contain(image.convert('RGB'), (160, 100))
             tk_image = ImageTk.PhotoImage(preview)
         self.app._images.append(tk_image)
-        tk.Label(card, image=tk_image, bg=background).grid(row=0, column=0, rowspan=6, sticky='nw', padx=(0, 12))
+        tk.Label(card, image=tk_image, bg=background).grid(
+            row=0, column=0, rowspan=6, sticky='nw', padx=(0, 12)
+        )
 
         text_color = 'white' if background == DISCOUNT_BG else 'black'
-        tk.Label(card, text=f'{product.article} - {product.name}', bg=background, fg=text_color, font=('Segoe UI', 12, 'bold')).grid(row=0, column=1, sticky='w')
-        tk.Label(card, text=f'Категория: {product.category_name}', bg=background, fg=text_color, font=('Segoe UI', 10)).grid(row=1, column=1, sticky='w')
-        tk.Label(card, text=f'Производитель: {product.manufacturer_name}', bg=background, fg=text_color, font=('Segoe UI', 10)).grid(row=2, column=1, sticky='w')
-        tk.Label(card, text=f'Поставщик: {product.supplier_name}', bg=background, fg=text_color, font=('Segoe UI', 10)).grid(row=3, column=1, sticky='w')
-        tk.Label(card, text=f'Единица измерения: {product.unit} | На складе: {product.stock_quantity}', bg=background, fg=text_color, font=('Segoe UI', 10)).grid(row=4, column=1, sticky='w')
-        tk.Label(card, text=f'Описание: {product.description}', bg=background, fg=text_color, font=('Segoe UI', 10), wraplength=750, justify='left').grid(row=5, column=1, sticky='w')
+        tk.Label(
+            card,
+            text=f'{product.article} - {product.name}',
+            bg=background,
+            fg=text_color,
+            font=('Segoe UI', 12, 'bold'),
+        ).grid(row=0, column=1, sticky='w')
+        tk.Label(
+            card,
+            text=f'Категория: {product.category_name}',
+            bg=background,
+            fg=text_color,
+            font=('Segoe UI', 10),
+        ).grid(row=1, column=1, sticky='w')
+        tk.Label(
+            card,
+            text=f'Производитель: {product.manufacturer_name}',
+            bg=background,
+            fg=text_color,
+            font=('Segoe UI', 10),
+        ).grid(row=2, column=1, sticky='w')
+        tk.Label(
+            card,
+            text=f'Поставщик: {product.supplier_name}',
+            bg=background,
+            fg=text_color,
+            font=('Segoe UI', 10),
+        ).grid(row=3, column=1, sticky='w')
+        tk.Label(
+            card,
+            text=f'Единица измерения: {product.unit} | На складе: {product.stock_quantity}',
+            bg=background,
+            fg=text_color,
+            font=('Segoe UI', 10),
+        ).grid(row=4, column=1, sticky='w')
+        tk.Label(
+            card,
+            text=f'Описание: {product.description}',
+            bg=background,
+            fg=text_color,
+            font=('Segoe UI', 10),
+            wraplength=750,
+            justify='left',
+        ).grid(row=5, column=1, sticky='w')
 
         price_frame = tk.Frame(card, bg=background)
         price_frame.grid(row=0, column=2, sticky='ne')
         if product.discount_percent > 0:
-            tk.Label(price_frame, text=f'{product.price:,.2f} ₽'.replace(',', ' '), bg=background, fg='red', font=('Segoe UI', 10, 'overstrike')).pack(anchor='e')
-            tk.Label(price_frame, text=f'{product.discounted_price:,.2f} ₽'.replace(',', ' '), bg=background, fg='black', font=('Segoe UI', 11, 'bold')).pack(anchor='e')
+            tk.Label(
+                price_frame,
+                text=f'{product.price:,.2f} ₽'.replace(',', ' '),
+                bg=background,
+                fg='red',
+                font=('Segoe UI', 10, 'overstrike'),
+            ).pack(anchor='e')
+            tk.Label(
+                price_frame,
+                text=f'{product.discounted_price:,.2f} ₽'.replace(',', ' '),
+                bg=background,
+                fg='black',
+                font=('Segoe UI', 11, 'bold'),
+            ).pack(anchor='e')
         else:
-            tk.Label(price_frame, text=f'{product.price:,.2f} ₽'.replace(',', ' '), bg=background, fg=text_color, font=('Segoe UI', 11, 'bold')).pack(anchor='e')
-        tk.Label(card, text=f'Скидка: {product.discount_percent}%', bg=background, fg=text_color, font=('Segoe UI', 10)).grid(row=1, column=2, sticky='ne')
+            tk.Label(
+                price_frame,
+                text=f'{product.price:,.2f} ₽'.replace(',', ' '),
+                bg=background,
+                fg=text_color,
+                font=('Segoe UI', 11, 'bold'),
+            ).pack(anchor='e')
+        tk.Label(
+            card,
+            text=f'Скидка: {product.discount_percent}%',
+            bg=background,
+            fg=text_color,
+            font=('Segoe UI', 10),
+        ).grid(row=1, column=2, sticky='ne')
 
         if self.app.current_user and self.app.current_user.role == 'Администратор':
             actions = ttk.Frame(card)
             actions.grid(row=5, column=2, sticky='se')
-            ttk.Button(actions, text='Редактировать', command=lambda value=product.id: self.app.open_product_form(value)).pack(side='left', padx=(0, 8))
-            ttk.Button(actions, text='Удалить', command=lambda value=product: self._delete_product(value)).pack(side='left')
+            ttk.Button(
+                actions,
+                text='Редактировать',
+                command=lambda value=product.id: self.app.open_product_form(value),
+            ).pack(side='left', padx=(0, 8))
+            ttk.Button(
+                actions, text='Удалить', command=lambda value=product: self._delete_product(value)
+            ).pack(side='left')
             for widget in actions.winfo_children():
                 widget.configure(cursor='hand2')
 
     def _delete_product(self, product: Product) -> None:
         if not self.app.repository.can_delete_product(product.id):
-            messagebox.showwarning('Удаление невозможно', 'Нельзя удалить товар, который присутствует в заказе.')
+            messagebox.showwarning(
+                'Удаление невозможно', 'Нельзя удалить товар, который присутствует в заказе.'
+            )
             return
-        confirmed = messagebox.askyesno('Подтверждение удаления', f'Удалить товар {product.article} - {product.name}?')
+        confirmed = messagebox.askyesno(
+            'Подтверждение удаления', f'Удалить товар {product.article} - {product.name}?'
+        )
         if not confirmed:
             return
         self.app.image_service.delete_if_managed(product.image_path)
@@ -272,7 +374,13 @@ class ProductListView(ttk.Frame):
 
 
 class ProductForm(tk.Toplevel):
-    def __init__(self, app: ShoeStoreApp, repository: Repository, image_service: ImageService, product_id: int | None) -> None:
+    def __init__(
+        self,
+        app: ShoeStoreApp,
+        repository: Repository,
+        image_service: ImageService,
+        product_id: int | None,
+    ) -> None:
         super().__init__(app)
         self.app = app
         self.repository = repository
@@ -281,7 +389,9 @@ class ProductForm(tk.Toplevel):
         self.selected_image_source: Path | None = None
         self.saved_image_path: str | None = None
         self.original_image_path: str | None = None
-        self.title(f'{WINDOW_TITLE} - {"Редактирование товара" if product_id else "Добавление товара"}')
+        self.title(
+            f'{WINDOW_TITLE} - {"Редактирование товара" if product_id else "Добавление товара"}'
+        )
         self.geometry('760x680')
         self.resizable(False, False)
         self.protocol('WM_DELETE_WINDOW', self._close)
@@ -307,7 +417,9 @@ class ProductForm(tk.Toplevel):
         frame = ttk.Frame(self, padding=16)
         frame.pack(fill='both', expand=True)
         frame.columnconfigure(1, weight=1)
-        next_id = self.repository.get_next_product_id() if self.product_id is None else self.product_id
+        next_id = (
+            self.repository.get_next_product_id() if self.product_id is None else self.product_id
+        )
         ttk.Label(frame, text='ID товара').grid(row=0, column=0, sticky='w', pady=6)
         self.id_entry = ttk.Entry(frame, state='readonly')
         self.id_entry.grid(row=0, column=1, sticky='ew', pady=6)
@@ -331,7 +443,9 @@ class ProductForm(tk.Toplevel):
             if values is None:
                 widget = ttk.Entry(frame, textvariable=self.vars[name])
             else:
-                widget = ttk.Combobox(frame, textvariable=self.vars[name], values=values, state='readonly')
+                widget = ttk.Combobox(
+                    frame, textvariable=self.vars[name], values=values, state='readonly'
+                )
             widget.grid(row=row, column=1, sticky='ew', pady=6)
             row += 1
 
@@ -342,7 +456,9 @@ class ProductForm(tk.Toplevel):
 
         image_row = ttk.Frame(frame)
         image_row.grid(row=row, column=1, sticky='w', pady=6)
-        ttk.Button(image_row, text='Выбрать изображение', command=self._choose_image).pack(side='left')
+        ttk.Button(image_row, text='Выбрать изображение', command=self._choose_image).pack(
+            side='left'
+        )
         self.image_label = ttk.Label(image_row, text='Изображение не выбрано')
         self.image_label.pack(side='left', padx=10)
         row += 1
@@ -373,7 +489,9 @@ class ProductForm(tk.Toplevel):
         self.description_text.insert('1.0', product.description)
         self.original_image_path = product.image_path
         self.saved_image_path = product.image_path
-        self.image_label.configure(text=Path(product.image_path).name if product.image_path else 'Используется заглушка')
+        self.image_label.configure(
+            text=Path(product.image_path).name if product.image_path else 'Используется заглушка'
+        )
 
     def _choose_image(self) -> None:
         file_name = filedialog.askopenfilename(
@@ -451,14 +569,27 @@ class OrdersView(ttk.Frame):
     def _build_toolbar(self) -> None:
         toolbar = ttk.Frame(self, padding=(12, 0, 12, 12))
         toolbar.pack(fill='x')
-        ttk.Button(toolbar, text='Назад к товарам', command=self.app.show_products_screen).pack(side='left')
+        ttk.Button(toolbar, text='Назад к товарам', command=self.app.show_products_screen).pack(
+            side='left'
+        )
         if self.app.current_user and self.app.current_user.role == 'Администратор':
-            ttk.Button(toolbar, text='Добавить заказ', command=lambda: self.app.open_order_form()).pack(side='right')
+            ttk.Button(
+                toolbar, text='Добавить заказ', command=lambda: self.app.open_order_form()
+            ).pack(side='right')
 
     def _build_table(self) -> None:
         frame = ttk.Frame(self, padding=12)
         frame.pack(fill='both', expand=True)
-        columns = ('number', 'articles', 'status', 'address', 'order_date', 'delivery_date', 'customer', 'code')
+        columns = (
+            'number',
+            'articles',
+            'status',
+            'address',
+            'order_date',
+            'delivery_date',
+            'customer',
+            'code',
+        )
         self.tree = ttk.Treeview(frame, columns=columns, show='headings')
         headings = {
             'number': 'Номер',
@@ -470,7 +601,16 @@ class OrdersView(ttk.Frame):
             'customer': 'Клиент',
             'code': 'Код',
         }
-        widths = {'number': 70, 'articles': 220, 'status': 120, 'address': 260, 'order_date': 110, 'delivery_date': 110, 'customer': 220, 'code': 70}
+        widths = {
+            'number': 70,
+            'articles': 220,
+            'status': 120,
+            'address': 260,
+            'order_date': 110,
+            'delivery_date': 110,
+            'customer': 220,
+            'code': 70,
+        }
         for column in columns:
             self.tree.heading(column, text=headings[column])
             self.tree.column(column, width=widths[column], anchor='center')
@@ -482,8 +622,12 @@ class OrdersView(ttk.Frame):
             self.tree.bind('<Double-1>', self._open_selected_order)
             button_row = ttk.Frame(self)
             button_row.pack(fill='x', padx=12, pady=(0, 12))
-            ttk.Button(button_row, text='Редактировать выбранный заказ', command=self._edit_selected).pack(side='left')
-            ttk.Button(button_row, text='Удалить выбранный заказ', command=self._delete_selected).pack(side='left', padx=8)
+            ttk.Button(
+                button_row, text='Редактировать выбранный заказ', command=self._edit_selected
+            ).pack(side='left')
+            ttk.Button(
+                button_row, text='Удалить выбранный заказ', command=self._delete_selected
+            ).pack(side='left', padx=8)
 
     def refresh_orders(self) -> None:
         for item in self.tree.get_children():
@@ -537,7 +681,9 @@ class OrderForm(tk.Toplevel):
         self.app = app
         self.repository = repository
         self.order_id = order_id
-        self.title(f'{WINDOW_TITLE} - {"Редактирование заказа" if order_id else "Добавление заказа"}')
+        self.title(
+            f'{WINDOW_TITLE} - {"Редактирование заказа" if order_id else "Добавление заказа"}'
+        )
         self.geometry('760x480')
         self.resizable(False, False)
         self.protocol('WM_DELETE_WINDOW', self._close)
@@ -575,7 +721,9 @@ class OrderForm(tk.Toplevel):
             if values is None:
                 widget = ttk.Entry(frame, textvariable=self.vars[name])
             else:
-                widget = ttk.Combobox(frame, textvariable=self.vars[name], values=values, state='readonly')
+                widget = ttk.Combobox(
+                    frame, textvariable=self.vars[name], values=values, state='readonly'
+                )
             widget.grid(row=row, column=1, sticky='ew', pady=6)
 
         buttons = ttk.Frame(frame)
@@ -602,7 +750,9 @@ class OrderForm(tk.Toplevel):
         self.vars['status_name'].set(order.status_name)
         self.vars['pickup_address'].set(order.pickup_address)
         self.vars['order_date'].set(order.order_date.isoformat() if order.order_date else '')
-        self.vars['delivery_date'].set(order.delivery_date.isoformat() if order.delivery_date else '')
+        self.vars['delivery_date'].set(
+            order.delivery_date.isoformat() if order.delivery_date else ''
+        )
         self.vars['customer_name'].set(order.customer_name)
         self.vars['pickup_code'].set(order.pickup_code)
 
