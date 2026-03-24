@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import sqlite3
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, Optional
 
 from .models import Order, Product, User
 
@@ -18,7 +18,7 @@ class Repository:
         connection.execute('PRAGMA foreign_keys = ON;')
         return connection
 
-    def authenticate(self, login: str, password: str) -> Optional[User]:
+    def authenticate(self, login: str, password: str) -> User | None:
         query = '''
             SELECT u.id, u.full_name, u.login, u.password, r.name AS role
             FROM users u
@@ -120,7 +120,7 @@ class Repository:
             rows = connection.execute(query, params).fetchall()
         return [self._map_product(row) for row in rows]
 
-    def get_product_by_id(self, product_id: int) -> Optional[Product]:
+    def get_product_by_id(self, product_id: int) -> Product | None:
         with self.connect() as connection:
             row = connection.execute(
                 '''
@@ -162,7 +162,7 @@ class Repository:
             value = connection.execute('SELECT COALESCE(MAX(order_number), 0) + 1 AS next_id FROM orders').fetchone()['next_id']
         return int(value)
 
-    def save_product(self, data: dict[str, object], product_id: Optional[int] = None) -> None:
+    def save_product(self, data: dict[str, object], product_id: int | None = None) -> None:
         supplier_id = self._get_or_create_lookup_id('suppliers', str(data['supplier_name']))
         manufacturer_id = self._get_or_create_lookup_id('manufacturers', str(data['manufacturer_name']))
         category_id = self._get_or_create_lookup_id('categories', str(data['category_name']))
@@ -245,7 +245,7 @@ class Repository:
             rows = connection.execute(query).fetchall()
         return [self._map_order(row) for row in rows]
 
-    def get_order_by_id(self, order_id: int) -> Optional[Order]:
+    def get_order_by_id(self, order_id: int) -> Order | None:
         with self.connect() as connection:
             row = connection.execute(
                 '''
@@ -272,7 +272,7 @@ class Repository:
             return None
         return self._map_order(row)
 
-    def save_order(self, data: dict[str, object], order_id: Optional[int] = None) -> None:
+    def save_order(self, data: dict[str, object], order_id: int | None = None) -> None:
         status_id = self._get_lookup_id('order_statuses', str(data['status_name']))
         pickup_point_id = self._get_lookup_id('pickup_points', str(data['pickup_address']), field='address')
         payload = (

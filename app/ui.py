@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import tkinter as tk
+from contextlib import suppress
 from datetime import date, datetime
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Optional
 
 from PIL import Image, ImageOps, ImageTk
 
-from .models import Order, Product, User
+from .models import Product, User
 from .repository import Repository
 from .services import ImageService
 
@@ -24,17 +24,15 @@ class ShoeStoreApp(tk.Tk):
         super().__init__()
         self.repository = repository
         self.image_service = image_service
-        self.current_user: Optional[User] = None
-        self.product_form_window: Optional[ProductForm] = None
-        self.order_form_window: Optional[OrderForm] = None
+        self.current_user: User | None = None
+        self.product_form_window: ProductForm | None = None
+        self.order_form_window: OrderForm | None = None
         self.title(f'{WINDOW_TITLE} - Авторизация')
         self.geometry('1240x820')
         self.minsize(1080, 720)
         icon_path = image_service.resources_dir / 'images' / 'Icon.ico'
-        try:
+        with suppress(tk.TclError):
             self.iconbitmap(default=icon_path)
-        except tk.TclError:
-            pass
         self._images: list[ImageTk.PhotoImage] = []
         self.main_container = ttk.Frame(self)
         self.main_container.pack(fill='both', expand=True)
@@ -78,7 +76,7 @@ class ShoeStoreApp(tk.Tk):
         self.title(f'{WINDOW_TITLE} - Заказы')
         OrdersView(self.main_container, self).pack(fill='both', expand=True)
 
-    def open_product_form(self, product_id: Optional[int] = None) -> None:
+    def open_product_form(self, product_id: int | None = None) -> None:
         if self.current_user is None or self.current_user.role != 'Администратор':
             messagebox.showwarning('Доступ запрещён', 'Добавлять и редактировать товары может только администратор.')
             return
@@ -87,7 +85,7 @@ class ShoeStoreApp(tk.Tk):
             return
         self.product_form_window = ProductForm(self, self.repository, self.image_service, product_id)
 
-    def open_order_form(self, order_id: Optional[int] = None) -> None:
+    def open_order_form(self, order_id: int | None = None) -> None:
         if self.current_user is None or self.current_user.role != 'Администратор':
             messagebox.showwarning('Доступ запрещён', 'Добавлять и редактировать заказы может только администратор.')
             return
@@ -274,15 +272,15 @@ class ProductListView(ttk.Frame):
 
 
 class ProductForm(tk.Toplevel):
-    def __init__(self, app: ShoeStoreApp, repository: Repository, image_service: ImageService, product_id: Optional[int]) -> None:
+    def __init__(self, app: ShoeStoreApp, repository: Repository, image_service: ImageService, product_id: int | None) -> None:
         super().__init__(app)
         self.app = app
         self.repository = repository
         self.image_service = image_service
         self.product_id = product_id
-        self.selected_image_source: Optional[Path] = None
-        self.saved_image_path: Optional[str] = None
-        self.original_image_path: Optional[str] = None
+        self.selected_image_source: Path | None = None
+        self.saved_image_path: str | None = None
+        self.original_image_path: str | None = None
         self.title(f'{WINDOW_TITLE} - {"Редактирование товара" if product_id else "Добавление товара"}')
         self.geometry('760x680')
         self.resizable(False, False)
@@ -507,7 +505,7 @@ class OrdersView(ttk.Frame):
                 ),
             )
 
-    def _get_selected_order_id(self) -> Optional[int]:
+    def _get_selected_order_id(self) -> int | None:
         selection = self.tree.selection()
         if not selection:
             messagebox.showwarning('Заказ не выбран', 'Сначала выберите заказ из списка.')
@@ -534,7 +532,7 @@ class OrdersView(ttk.Frame):
 
 
 class OrderForm(tk.Toplevel):
-    def __init__(self, app: ShoeStoreApp, repository: Repository, order_id: Optional[int]) -> None:
+    def __init__(self, app: ShoeStoreApp, repository: Repository, order_id: int | None) -> None:
         super().__init__(app)
         self.app = app
         self.repository = repository

@@ -3,11 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, Rectangle, Polygon, Ellipse
-from matplotlib.lines import Line2D
 from matplotlib import rcParams
+from matplotlib.lines import Line2D
+from matplotlib.patches import FancyBboxPatch, Polygon, Rectangle
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DOCS_DIR = BASE_DIR / 'docs'
@@ -68,7 +69,7 @@ def draw_decision(ax, x, y, w, h, text):
 def draw_document(ax, x, y, w, h, text):
     xs = [x, x + w, x + w, x + w * 0.72, x + w * 0.45, x + w * 0.20, x]
     ys = [y + h, y + h, y + h * 0.15, y, y + h * 0.10, y, y + h * 0.15]
-    patch = Polygon(list(zip(xs, ys)), closed=True, linewidth=1.4, edgecolor='#2b2b2b', facecolor='white')
+    patch = Polygon(list(zip(xs, ys, strict=False)), closed=True, linewidth=1.4, edgecolor='#2b2b2b', facecolor='white')
     ax.add_patch(patch)
     add_text(ax, x + w / 2, y + h * 0.60, text, fontsize=9.8)
 

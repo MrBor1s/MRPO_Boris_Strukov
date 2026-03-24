@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Optional
 
 
 @dataclass(slots=True)
@@ -30,7 +29,7 @@ class Product:
     discount_percent: int
     stock_quantity: int
     description: str
-    image_path: Optional[str]
+    image_path: str | None
 
     @property
     def discounted_price(self) -> float:
@@ -46,7 +45,7 @@ class Order:
     status_name: str
     pickup_point_id: int
     pickup_address: str
-    order_date: Optional[date]
-    delivery_date: Optional[date]
+    order_date: date | None
+    delivery_date: date | None
     customer_name: str
     pickup_code: str
